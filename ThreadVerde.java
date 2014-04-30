@@ -1,32 +1,42 @@
+import java.util.concurrent.Future;
+
 public class ThreadVerde extends Thread {
 	private Buffer buffer;
-	private boolean terminou = false;
+	private CoordenadorThread coordenador;
+	private Future future;
 
-	public ThreadVerde(String string, Buffer buffer) {
+	public ThreadVerde(CoordenadorThread coordenador, String string,
+			Buffer buffer) {
 		super(string);
 		this.buffer = buffer;
-		System.out.println(this.getName() + " iniciado");
+		this.coordenador = coordenador;
 	}
 
 	public void run() {
-		while (!terminou) {
-			if (!buffer.vazio()) {
+		while (true) {
+			try {
 				int n = buffer.ler();
 				System.out.println(this.getName() + " leu " + n);
-				terminou = true;
-			} else {
+				coordenador.removerLeitor(this);
+				coordenador.acordarEscritor();
+				System.out.println("==> " + this.getName() + " terminou");
+				break;
+			} catch (Exception e) {
 				try {
 					System.out.println(this.getName() + " foi dormir");
-					sleep(6000);
-				} catch (InterruptedException e) {
+					sleep(60000);
+				} catch (InterruptedException f) {
 					System.out.println(this.getName() + " foi interrompido");
-					e.printStackTrace();
 				}
 			}
 		}
 	}
-	
-	public boolean terminou() {
-		return terminou;
+
+	public Future getFuture() {
+		return future;
+	}
+
+	public void setFuture(Future future) {
+		this.future = future;
 	}
 }

@@ -1,39 +1,55 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public class CoordenadorThread extends Thread {
-	private Buffer buffer;
-	private LauExecutorService threadsVerdes;
-	private ScheduleThread threadsAzuis;
-	
+public class CoordenadorThread {
+	private Buffer buffer = new Buffer();
+	private ExecutorService verdeExecutor = Executors.newFixedThreadPool(4);
+	private ScheduledExecutorService azulScheduler = Executors
+			.newSingleThreadScheduledExecutor();
+	private List<ThreadVerde> leitores = new ArrayList<ThreadVerde>();
+	private List<ThreadAzul> escritores = new ArrayList<ThreadAzul>();
+
 	public CoordenadorThread() {
-		this.buffer = new Buffer();
-		this.threadsVerdes = new LauExecutorService(this.buffer);
-		this.threadsAzuis = new ScheduleThread(this.buffer);
-		threadsVerdes.run();
-		threadsAzuis.run();
-		System.out.println("Coordenador iniciado");
-	}
-	
-	public void run() {	
-		while(true) {
-			if (!buffer.vazio()) {
-				for (ThreadVerde verde : threadsVerdes.getThreads()) {
-					if (!verde.terminou()) {
-						verde.interrupt();
-					}
-				}
-			}
-			if (!buffer.cheio()) {
-				for (ThreadAzul azul : threadsAzuis.getThreads()) {
-					if (!azul.terminou()) {
-						azul.interrupt();
-					}
-				}
-			}
-			try {
-				sleep(150);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		ThreadAzul azul;
+		ThreadVerde verde;
+		for (int i = 0; i < 100; ++i) {
+			azul = new ThreadAzul(this, "Escritor" + i, buffer);
+			azul.setFuture(azulScheduler.schedule(azul, (i + 1) * 100,
+					TimeUnit.MILLISECONDS));
+			escritores.add(azul);
+
+			verde = new ThreadVerde(this, "Leitor" + i, buffer);
+			verde.setFuture(verdeExecutor.submit(verde));
+			leitores.add(verde);
 		}
+		System.out.println("Coordenador correndo");
+	}
+
+	public void removerEscritor(ThreadAzul escritor) {
+		this.escritores.remove(escritor);
+	}
+
+	public ThreadAzul pegarEscritor() {
+		return escritores.get(0);
+	}
+
+	public void acordarEscritor() {
+		this.pegarEscritor().getFuture().cancel(true);
+	}
+
+	public void removerLeitor(ThreadVerde leitor) {
+		this.escritores.remove(leitor);
+	}
+
+	public ThreadVerde pegarLeitor() {
+		return leitores.get(0);
+	}
+
+	public void acordarLeitor() {
+		this.pegarLeitor().getFuture().cancel(true);
 	}
 }
