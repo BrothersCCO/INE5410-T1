@@ -1,6 +1,6 @@
 public class ThreadAzul extends Thread {
 	private Buffer buffer;
-	private boolean terminou = false;
+	private boolean escreveu = false;
 
 	public ThreadAzul(String string, Buffer buffer) {
 		super(string);
@@ -8,25 +8,22 @@ public class ThreadAzul extends Thread {
 	}
 
 	public void run() {
-		terminou = buffer.cheio();
-		while (!terminou) {
+		while (true) {
 			int n = (int) (Math.random() * 100) + 1;
-			if (!buffer.escrever(n)) {
-				terminou = true;
-			} else {
+			if (buffer.escrever(n)) {
 				System.out.println(this.getName() + " escreveu " + n);
+				escreveu = true;
+				break;
 			}
 
 			try {
 				sleep(60000);
-				System.out.println(this.getName() + " foi dormir");
 			} catch (InterruptedException e) {
-				System.out.println(this.getName() + " foi interrompido");
 			}
 		}
 	}
 
-	public boolean terminou() {
-		return terminou;
+	public boolean isEscreveu() {
+		return escreveu;
 	}
 }

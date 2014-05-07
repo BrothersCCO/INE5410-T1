@@ -1,6 +1,7 @@
 
 public class Main {
 	public static void main(String[] args) {
-		new CoordenadorThread().run();
+		CoordenadorThread coord = new CoordenadorThread();
+		coord.start();
 	}
 }
