@@ -1,43 +1,32 @@
-import java.util.concurrent.Future;
-
 public class ThreadAzul extends Thread {
 	private Buffer buffer;
-	private CoordenadorThread coordenador;
-	private Future future;
+	private boolean terminou = false;
 
-	public ThreadAzul(CoordenadorThread coordenador, String string,
-			Buffer buffer) {
+	public ThreadAzul(String string, Buffer buffer) {
 		super(string);
 		this.buffer = buffer;
-		this.coordenador = coordenador;
 	}
 
 	public void run() {
-		while (true) {
-			try {
-				int n = (int) (Math.random() * 100) + 1;
-				buffer.escrever(n);
+		terminou = buffer.cheio();
+		while (!terminou) {
+			int n = (int) (Math.random() * 100) + 1;
+			if (!buffer.escrever(n)) {
+				terminou = true;
+			} else {
 				System.out.println(this.getName() + " escreveu " + n);
-				coordenador.removerEscritor(this);
-				coordenador.acordarLeitor();
-				System.out.println("==> " + this.getName() + " terminou");
-				break;
-			} catch (Exception e) {
-				try {
-					System.out.println(this.getName() + " foi dormir");
-					sleep(60000);
-				} catch (InterruptedException f) {
-					System.out.println(this.getName() + " foi interrompido");
-				}
+			}
+
+			try {
+				sleep(60000);
+				System.out.println(this.getName() + " foi dormir");
+			} catch (InterruptedException e) {
+				System.out.println(this.getName() + " foi interrompido");
 			}
 		}
 	}
 
-	public Future getFuture() {
-		return future;
-	}
-
-	public void setFuture(Future future) {
-		this.future = future;
+	public boolean terminou() {
+		return terminou;
 	}
 }
